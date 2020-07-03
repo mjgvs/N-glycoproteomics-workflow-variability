@@ -1,0 +1,134 @@
+---
+title: "Technical report: variability in N-glycopeptide workflow"
+output:
+  prettydoc::html_pretty:
+    theme: cayman
+    highlight: github
+---
+
+
+
+# Authors and funding
+Frania J. Zuñiga-Bañuelos, glyXera, Magdeburg, Germany & Maarten van Schaik, University of Leeds, United Kingdom.
+
+The IMforFUTURE project is funded by the Horizon 2020 program of the European Union. 
+
+<figure>
+  <img src="Figures\logos.bmp" alt="logo" style="max-width:50%;"/>
+</figure>
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Introduction
+This report describes joint work by [Frania J. Zuñiga-Bañuelos](https://imforfuture.eu/fellows/frania-zuniga/) and [Maarten van Schaik](https://imforfuture.eu/fellows/maarten-van-schaik/), PhD candidates in the EU-funded programme [IMforFUTURE](https://IMforFUTURE.eu) (Innovative training in methods for future data). Frania is working at [glyxera](https://www.glyxera.com/) under the supervision of Erdmann Rapp, and Maarten is working at University of Leeds under supervision of Prof. Jeanine Houwing-Duistermaat and Prof. Arief Gusnanto. As part of the IMforFUTURE training, Maarten spent one month at glyXera working with Frania to gain multidisciplinary experiences by observing the lab work she does and learn about possible sources of measurement error in her glycoproteomic research. The results of this report are based on Maarten and Frania’s collaboration during and after his secondment. 
+
+# Motivation
+
+The goal of this report is to determine the technical variation of a workflow performed to reveal the N-glycosylation of blood plasma proteins. To evaluate the extent of technical variation, this report gives a brief overview of data analysis performed on the Mass Spectrometry results.
+
+The variability of the detection power might be influenced by several factors. These factors are related to the sample composition and to the workflow. At first hand, the factors associated to the sample composition might depend on the quality of the sample, any health conditions, metabolic status or genetic and epigenetic differences among individuals. On the other hand, the factors associated to the workflow might be pipetting errors, variations in temperature, the batch of a product, reagents used during preparation, etc. Therefore, to understand the variability associated to a group of samples, it is important to assess first the variability only attributable to the workflow. 
+
+The aim of the workflow used for the preparation of the samples in this report aims to detect N-glycosylation of proteins in blood plasma samples. The glycosylation is a post-translational modification where a sugar moiety is added to a protein. In nature, the N-glycosylation of a protein can reflect changes according to the environment where it is exposed. The challenge is to be able to determine which changes are significant after considering the technical variation of the workflow. The aim of this report is to gain knowledge of the variability in detection caused by the workflow, therefore we used Fibrinogen protein, a moderately complex blood plasma-derived sample. This sample was processed 4 times with the same workflow.  The data was manually validated and statistically assessed.
+
+
+# Sample preparation and mass spectrometry methods
+
+Commercial fibrinogen protein sample extracted from human blood plasma was digested using trypsin. The resulting digested sample was proportionally divided in 4 tubes. After the digestion a population of peptides, N-glycopeptides and O-glycopeptides was obtained. Here, the N-glycopeptides are those peptides with a glycan moiety attached to asparagine, and the O-glycopeptides are the peptides with a glycan moiety attached to a serine or threonine. 
+
+In order to enrich the population of N- and O-glycopeptides, a glycopeptide enrichment cotton-HILIC-SPE (hydrophilic interaction liquid chromatography solid-phase extraction) method was applied. After that, the glycopeptide-enriched fraction was analysed by LC-MS/MS on a Thermo Scientific Ultimate 3000 UHPLC system coupled with an Orbitrap Elite™ Hybrid Ion Trap-Orbitrap Mass Spectrometer, fragmentation by HCDstep energy.  The experimental design is shown in 
+ *Figure 1*. 
+
+<figure>
+<img src= "Figures\Figure 1.bmp" alt="Experimental Design" style="max-width:50%;"/> 
+<figcaption><em>Figure 1: Experimental Design</em></figcaption>
+</figure>
+
+Manual and software-assisted data analysis was performed using Byonic® and glyXtoolMS – an in-house developed open source software [1]. Each software uses a particular algorithm to predict which peptides and glycans might be present in each sample. After comparing the *in silico* and experimental data both software are able to provide a list of the “most-likely” present N-glycopeptides in each of the technical replicates of the sample. Then, the glycopeptide identifications proposed by the software are manually validated. The N-glycopeptide identifications are validated as true if the suggested identification fulfils the minimal evidence required. Until this point, the validation only includes the revision of the peptide-sequence associated to each glycan composition. The glycan structure requires additional validation using LC-MS/MS analysis fragmentation by HCDlow energy. At the moment this report was written, the validation of the glycan structure was pendent. Finally, each technical replicate generates a summary of the N-glycopeptide list with a collection of features associated to each N-glycopeptide observed, such as chemical modifications, mass, charge, retention time, area under the curve (AUC), etc. 
+
+# Approaches for assessing the reproducibility of detection of an N-glycopeptide
+
+The first step in the analysis was to visualize all the valid N-glycopeptides or protein-peptide-glycan (PPG) combinations found in each technical replicate. The lists showed 49-51 PPG validated per technical replicate. At this point this PPG combinations included redundant combinations due to different chemical modifications and missed cleavages in the peptide sequence where the glycan is attached. However, our purpose is to assess the combinations occurring between a unique N-glycan moiety and a unique site in a specific protein. Therefore, the peptide modifications (e.g. methionine oxidation, amidation and deamidation) and missed cleavages were ignored in this process. The PPG combinations where collapsed to the principal tryptic peptide. 
+
+The intersection of the validated PPG across the four samples were taken as the N-glycopeptides of interest: in total, 25 unique PPG combinations were identified. Then the reproducibility of the detection of the unique PPGs in all the technical replicates was assessed in four different ways:
+
+1.	Absolute counts: the amount of times that an N-glycopeptide was detected in a sample. The resulting table shows only the N-glycopeptides with the main tryptic peptide that contains the glycosylation site (where the glycan is attached).
+
+2.	Relative counts: the number of times an N-glycopeptide was detected in a sample, divided by the total number of N-glycopeptides detected in the sample. Two PPGs (beta-GTAGNALMDGASQLMGENR- HexNAc(4)Hex(5)NeuAc(1 or 2)) accounted for a mean of 31% of all glycan counts in the four samples, another set of PPGs: Gamma-(VDK)DLQSLEDILHQVENK-HexNAc(4)Hex(5)NeuAc(1 or 2)) accounted for a mean of 20% of the glycan counts in all samples, with the other 21 PPGs accounting for the remaining counts.
+
+3.	Binary indicator for presence or absence of the 25 unique PPG in each sample. Of the 25 unique PPGs, 11 were identified in all four samples, 7 in three out of 4, two in two samples, and 5 in only one sample out of four. 
+
+4.	Relative N-glycopeptides intensity as area under the curve (AUC). This method, we compare the reproducibility of the abundance from the N-glycopeptide ions observed in each technical replicate. This assessment will be explained in the following section.
+
+<figure>
+<img src= "Figures\Table 1.png" alt="N-glycopeptide counts by replicate" style="max-width:75%;"> 
+<figcaption>*Table 1: N-glycopeptide counts by replicate*</figcaption>
+</figure>
+
+# Estimation of the N-glycopeptide abundance using area under the curve of the extracted ion chromatogram peaks
+
+The quantification of the N-glycopeptide abundance is done by the sum of the signal intensity of the correspondent precursor ion. The precursor ion scan, or MS1, is the first step of the analysis in the LC-MS/MS method stablished (*Figure 2-A*). The MS1 analysis captures the signal of all the molecular ions (precursor ions) that are potential candidates to be decomposed using collisional energy (HCDstep). The decomposed precursor ion results in a fragment ion scan so called MS2 (*Figure 2-D*). Only after obtaining the MS2 analysis is it possible to reveal the identity of the precursor ion decomposed (using ByonicTM software). In our case, the MS2 analysis allows to validate and select the precursor ions correspondent to N-glycopeptides. In retrospective, using the MS1 analysis it is possible to filter the precursor ions corresponding to only N-glycopeptides (*Figure 2-B*). In other words, the precursor ions are the successfully ionized molecules obtained after the Cotton-HILIC-SPE enrichment of N-glycopeptides found in the proteolytic digestion of fibrinogen protein.
+
+Furthermore, it is possible to select the m/z window of the precursor ion correspondent to a specific N-glycopeptide (*Figure 2-C*). This plot is called extracted ion chromatogram (XIC) and shows the peaks of the precursor ion selected according to the times it was detected, as well as the acquisition time when it was detected. The y axis of the XIC plot is signal intensity and the x axis is time. Then the sum of the area under the curve (AUC) is the integrated intensity of the peak that corresponds to a certain precursor ion. This is taken as the abundance of such precursor ion (specific N-glycopeptide) in the LC-MS/MS measurement.
+
+It is important to clarify that until this point it is not possible to say that this is the abundance of an N-glycopeptide in the intact sample because this measurement is highly affected by the ionization efficiency of the molecules. However, this analysis is expected to show how consistent the relation among the abundance of this N-glycopeptides is in all the technical replicates.
+
+<figure>
+<img src= "Figures\Figure 2.bmp" alt="MS raw data" style="max-width:100%;"/> 
+<figcaption><em>Figure 2: LC-MS/MS raw data visualization. A) MS1. The plot shows the intensity of the main peaks eluting from UHPLC system. B) MS1 after selecting the precursor ions corresponding to N-glycopeptides. C) MS1 after selecting the precursor ion with an m/z 952.89. D) MS2 scan generated after fragmenting the precursor ion m/z 952.89. </em></figcaption>
+</figure>
+
+<figure>
+<img src= "Figures\Figure 3.bmp" alt="MS spectra" style="max-width:100%;"/> 
+<figcaption><em>Figure 3: MS2 spectra after data processing using ByonicTM software. The N-glycopeptide suggested identification is given in the upper rows. Multiple rows are given showing basically the same N-glycopeptide identification. The MS2 spectra show the evidence necessary to validate the N-glycopeptide suggested identification of the software.</em></figcaption>
+</figure>
+
+# Technical variance in the detection of an N-glycopeptide 
+
+The main interest was technical variation of N-glycopeptide identification and detection in the four technical replicates, for which purpose the Coefficient of Variations (CV) was used. The CV is defined as the standard deviation divided by the mean of the N-glycopeptide integrated intensity across the samples. The CV score of an N-glycopeptide can be interpreted as follows. If the CV is high, this means that the integrated intensity is high in some of the samples, while simultaneously low in other samples. If the CV score of an N-glycopeptide is low, this means that the integrated intensity is roughly the same in all the samples. 
+
+We have $N$ samples and for each sample the total integrated intensities of $J$ N-glycopeptides have been quantified. There are $N_j$ observations of the same N-glycopeptide in each sample (these are the numbers from Table 1). We define $y_{ijk}$ as the integrated intensity of the $k$-th observation of the $j$-th N-glycopeptide in the $i$th sample, $i=1,\dots,N$, $j=1,\dots,J$, $k=1,\dots,N_j$. In this analysis, the integrated intensities $y_{ijk}$ of the observations are quantified using the area under the curve (AUC) of extracted ion chromatogram (XIC) peaks. Only observations detected with high confidence (validated) were used. The relative integrated intensities of sample $i$ are then defined as follows:
+
+$$\tilde{y}_{ij} = \frac{\sum_{k=1}^{N_j} y_{ijk}}{\sum_{j=1}^{J} \sum_{k=1}^{N_j} y_{ijk}}$$
+Processing the N-glycopeptide intensities this way is a normalisation method also known as total area normalisation [3]. The mean integrated intensity across samples is the average of the sample integrated intensities, i.e. 
+
+$$\mu_{j} = \frac{\sum_{i=1}^{N} \tilde{y}_{ij}}{N}$$
+
+The standard deviation of the integrated intensity for the j-th glycopeptide is calculated as 
+
+$$\sigma_{j} = \sqrt{\frac{1}{N-1}\sum_{i=1}^{N}(\tilde{y}_{ij} - \mu_{j})^2}$$
+
+And the Coefficient of Variation for the j-th N-glycopeptide is given by
+
+$$\text{CV}_{j} = \frac{\sigma_{j}}{\mu_{j}}$$ 
+
+Our findings show that four protein-glycopeptide structures account for the majority of measured intensity. Beta-GTAGNALMDGASQLMGENR-HexNAc(4)Hex(5)NeuAc(1 or 2) each account for up to 40% of the relative AUC, and Gamma-(VDK)DLQSLEDILHQVENK-HexNAc(4)Hex(5)NeuAc(1 or 2) each account for up to 25%. The remaining few percent of relative AUC are accounted for the other 23 protein-glycopeptide structures (see *Figure 4*). Overall, the CV of the N-glycopeptides is rather high (0.5-2.0) except for the most abundant ones. A visualisation of the CV of the N-glycopeptides as a function of the cumulative percentage of peptides having a maximum CV score is given in *Figure 5*. From this plot we can see that the CV overall is rather high. 
+
+<figure>
+<img src= "Figures\Figure 4.png" alt="relative intensity and CV per N-glycopeptide" style="max-width:100%;"/> 
+<figcaption><em>Figure 4: Relative intensity and coefficient of variation broken per N-glycopeptide. The results are based on the 4 technical replicates of blood plasma. The results show that many structures are detected, but only a few N-glycopeptide account for most of the relative signal (as measured by the integrated AUC of the XIC). Furthermore, more highly abundant N-glycopeptides tend to have lower CV (suggesting more confidence in presence in the replicates). </em></figcaption>
+</figure>
+
+<figure>
+<img src= "Figures\Figure 5.bmp" alt="ECDF of CVs" style="max-width:50%;"/> 
+<figcaption><em>Figure 5: Empirical Cumulative Distribution of the CV values of the N-glycopeptides found in the 4 technical replicates. CV appears to be uniformly distributed on the range (0.0 - 2.0), indicating many N-glycopeptides have a high CV.</em></figcaption>
+</figure>
+
+# Conclusion, discussion, and possibilities for further work
+
+Interesting enough, the relative intensities of the N-glycopeptides abundances found using this experimental design, agree with the results from orthogonal methods used for the quantification of the N-glycan abundance in fibrinogen [2].
+
+The wide distribution of the CV among N-glycopeptides reveals the detection limits of the workflow. Based on the literature and relative AUC analysis done in this report, it is concluded that the reproducibility on the detection of certain N-glycopeptides is subjected to their abundance in the sample and of course, their ionization efficiency. The CV in most structures is caused by the fact that they were not detected in all, or even most, of the 4 samples. Further analysis could investigate the correlation between the CV and the size or mass of the glycopeptides, or other characteristics or compositional features of the glycan.
+
+Finally, in this report only total area normalisation (TA) was used. Since TA normalisation forces the sum of all glycan peaks in each replicate to sum to 1, this results in compositional data. Any statistical testing further used on this type of data is known to lead to biased results [4]. However, there exist other normalisation methods for the glycan peaks which may give better performance [3]. It could be studied further what the effect of those other normalisation methods would be on the apparent workflow technical variability. 
+
+# References
+
+[1] Pioch, M., et al., glyXtool(MS): An Open-Source Pipeline for Semiautomated Analysis of Glycopeptide Mass Spectrometry Data. Anal Chem, 2018. 90(20): p. 11908-11916.
+
+[2] J. Proteome Res. 2013, 12, 1, 444–454 Publication Date:November 15, 2012 https://doi.org/10.1021/pr300813h
+
+[3] Uh, H.-W., Klarić, L., Ugrina, I., Lauc, G., Smilde, A. K., & Houwing-Duistermaat, J. J. (2020). Choosing proper normalization is essential for discovery of sparse glycan biomarkers. Molecular Omics. https://doi.org/10.1039/c9mo00174c
+
+[4] Atchison, J. "The statistical analysis of compositional data (with Discussion)." JR Stat. Soc. B 44 (1982): 139-177.

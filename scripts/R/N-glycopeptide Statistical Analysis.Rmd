@@ -1,0 +1,441 @@
+---
+title: "N-glycopeptide Statistical Analysis V.2"
+author: "Maarten van Schaik, University of Leeds"
+date: "6/28/2020"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+# Introduction  
+
+This Markdown file contains code used for the a report on the technical variability in N-glycopeptide intensity by Frania J. Zuñiga-Bañuelos. All statistical analysis is done by Maarten van Schaik. Frania and Maarten are PhD candidates in the EU-funded programme [IMforFUTURE](https://imforfuture.eu) (Innovative training in methods for future data).
+
+The report can be read at [GitHub](https://mjgvanschaik.github.io/glyXera_secondment/)
+
+For the statistical part in the report, the following software was used:
+
+`R` version 3.6.3 (2020-02-29) 64-bit
+Tableau 2020.2
+
+The following R packages were used:
+
+`Tidyverse` 1.3.0
+`readxl` 1.3.1
+`writexl` 1.3
+`ggplot2` 3.3.0
+`data.table` 1.12.8
+
+## Setup
+
+The setup block should always be run first since it loads the required packages and sets the correct location of the data. 
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+require(tidyverse)
+require(readxl)
+require(writexl)
+require(ggplot2)
+require(data.table)
+```
+
+# Load data
+
+This block of code will load the 4 sample files and combine them into one main file which will be the basis of all further analyses. 
+
+We only analyse the rows for which `Validate` = `True-positive`, `Glycans` is an observed glycan, and `Quant.level` = `1`. 
+
+```{r}
+data_location <- "data/"
+fib1 <- read.csv(paste0(data_location, "Fib_1.csv")); fib1$batch <- "1"; fib1$row.number <- 1:nrow(fib1)
+fib2 <- read.csv(paste0(data_location, "Fib_2.csv")); fib2$batch <- "2"; fib2$row.number <- 1:nrow(fib2)
+fib3 <- read.csv(paste0(data_location, "Fib_3.csv")); fib3$batch <- "3"; fib3$row.number <- 1:nrow(fib3)
+fib4 <- read.csv(paste0(data_location, "Fib_4.csv")); fib4$batch <- "4"; fib4$row.number <- 1:nrow(fib4)
+
+
+fib <- rbind(fib1, fib2, fib3, fib4)
+
+fib <- fib %>%
+  filter(Validate=="True-positive",
+         Glycans!="",
+         Quant.level==1)
+
+fib$batch <- as.factor(fib$batch)
+
+fib$Protein <- as.character(fib$Protein.name)
+fib$Protein[grepl("alpha", fib$Protein)] <- "alpha"
+fib$Protein[grepl("beta", fib$Protein)] <- "beta"
+fib$Protein[grepl("gamma", fib$Protein)] <- "gamma"
+
+fib$Peptide <- droplevels(fib$Sequence..unformatted.)
+fib$Peptide <- as.character(fib$Peptide)
+fib$Peptide[grepl("DLQSLEDILHQVENK", fib$Peptide)] <- "(VDK)DLQSLEDILHQVENK"
+fib$Peptide <- factor(fib$Peptide)
+
+fib$Glycans <- droplevels(fib$Glycans)
+
+fib$XIC.AUC <- as.numeric(as.character(fib$XIC.AUC))
+fib$XIC.area.summed <- as.numeric(as.character(fib$XIC.area.summed))
+fib$Total.XIC.AUC.Averagine <- as.numeric(as.character(fib$Total.XIC.AUC.Averagine))
+
+table(fib$Peptide)
+table(fib$Protein)
+table(fib$Glycans)
+
+fib <-  fib %>% 
+  mutate(PPG = as.factor(paste0(Protein, ";",
+                      Peptide, ";",
+                      Glycans)))
+
+rm(data_location, fib1, fib2, fib3, fib4)
+
+write.csv(fib, file="data/Fib_total_processed.csv")
+
+saveRDS(fib, "data/Fib_total_processed.Rds")
+```
+
+
+# Mean, sd and CV statistics for number of glycopeptide observations
+
+The first analyses we did was to look at the number of observations, the number of observations relative to the total number of observations, and a presence/absence indicator. 
+
+```{r}
+fib <- readRDS("data/Fib_total_processed.Rds")
+
+# Take data,
+fib_summary <- fib %>%
+  # Group by PPG-batch combination, do not drop combinations with zeros
+  group_by(PPG,
+           batch,
+           .drop=FALSE) %>%
+  # For each combination, return the count and a presence indicator
+  summarise(n=n(),
+            binary = n > 0) %>%
+  # Now group by batch only
+  group_by(batch) %>%
+  # Calculate the total nr of observations per batch 
+  # and the relative counts. 
+  mutate(batch_total = sum(n),
+         abundance = n/batch_total)
+
+# Now we create a table with summaries per N-glycopeptide (PPG). 
+# Take data,
+fib_summary2 <- fib_summary %>%
+  # Group by PPG,
+  group_by(PPG) %>%
+  # Calculate mean, sd, CV of relative counts, counts, and binary presences.
+  summarise(mean_abundance = mean(abundance),
+            sd_abundance = sd(abundance),
+            CV_abundance = sd_abundance / mean_abundance,
+            mean_count = mean(n),
+            sd_count = sd(n),
+            CV_count = sd_count / mean_count,
+            mean_presence = mean(binary),
+            mean_presence = mean(binary),
+            sd_presence = sd(binary),
+            CV_presence = sd_presence / mean_presence)
+
+# Rename the 'levels' of the PPG variable to be shorter ("PPG#").
+fib_summary$PPG_nr <- as.factor(fib_summary$PPG)
+fib_summary2$PPG_nr <- as.factor(fib_summary2$PPG)
+levels(fib_summary$PPG_nr) <- paste0("PPG-", 1:length(levels(fib_summary$PPG)))
+levels(fib_summary2$PPG_nr) <- paste0("PPG-", 1:length(levels(fib_summary2$PPG)))
+
+# Create a "wide" table to summarize our findings on the N-glycopeptide counts. 
+fib_summary_count <- right_join(fib_summary %>%
+                                  dplyr::select(PPG_nr,
+                                                PPG,
+                                                batch,
+                                                n) %>%
+                                  spread(batch,
+                                         n),
+                                fib_summary2 %>%
+                                  dplyr::select(PPG_nr,
+                                                # PPG,
+                                                mean_count,
+                                                sd_count,
+                                                CV_count),
+                                "PPG_nr")%>%
+  separate(col=PPG,
+           into=c("protein", "peptide", "glycan"),
+           sep=";")
+
+# Create a "wide" table to summarize our findings on the N-glycopeptide abundances.
+fib_summary_abundance <- right_join(fib_summary %>%
+                                      dplyr::select(PPG_nr,
+                                                    PPG,
+                                                    batch,
+                                                    abundance) %>%
+                                      spread(batch,
+                                             abundance),
+                                    fib_summary2 %>%
+                                      dplyr::select(PPG_nr,
+                                                    # PPG,
+                                                    mean_abundance,
+                                                    sd_abundance,
+                                                    CV_abundance),
+                                    "PPG_nr")%>%
+  separate(col=PPG,
+           into=c("protein", "peptide", "glycan"),
+           sep=";")
+
+# Create a "wide" table to summarize our findings on the N-glycopeptide presences.
+fib_summary_presence <- right_join(fib_summary %>%
+                                     dplyr::select(PPG_nr,
+                                                   PPG,
+                                                   batch,
+                                                   binary) %>%
+                                     spread(batch,
+                                            binary),
+                                   fib_summary2 %>%
+                                     dplyr::select(PPG_nr,
+                                                   # PPG,
+                                                   mean_presence,
+                                                   sd_presence,
+                                                   CV_presence),
+                                   "PPG_nr") %>%
+  separate(col=PPG,
+           into=c("protein", "peptide", "glycan"),
+           sep=";")
+
+# Reshape the 'wide' tables created above to be 'long' format. 
+# This is useful for making plots with ggplot2 and Tableau. 
+fib_summary_count_long <- gather(fib_summary_count,
+                                 batch,
+                                 count,
+                                 "1":"4")
+
+fib_summary_abundance_long <- gather(fib_summary_abundance,
+                                     batch,
+                                     abundance,
+                                     "1":"4")
+
+fib_summary_presence_long <- gather(fib_summary_presence,
+                                    batch,
+                                    presence,
+                                    "1":"4")
+
+# Export the long format lists to an Excel file with multiple sheets.
+# This is the file we import into Tableau. 
+write_xlsx(list("fib_summary_count" = fib_summary_count_long,
+                "fib_summary_abundance" = fib_summary_abundance_long,
+                "fib_summary_presence" = fib_summary_presence_long),
+           "data/summaries/fib_summary_counts.xlsx")
+
+# We can also create plots in R.
+# three separate plots
+plot(ecdf(fib_summary_count$CV_count),
+     xlab="CV",
+     ylab="Percentage",
+     main="Empirical Cumulative Distribution: CV of P-P-G counts")
+
+plot(ecdf(fib_summary_abundance$CV_abundance),
+     xlab="CV",
+     ylab="Percentage",
+     main="Empirical Cumulative Distribution: CV of P-P-G relative counts")
+
+plot(ecdf(fib_summary_presence$CV_presence),
+     xlab="CV",
+     ylab="Percentage",
+     main="Empirical Cumulative Distribution: CV of P-P-G presence")
+
+# one plot
+plot(ecdf(fib_summary_count$CV_count),
+     xlab="CV",
+     ylab="Percentage",
+     main="Empirical Cumulative Distribution: CV of PPGs",
+     xlim=c(0, 3),
+     col="green")
+lines(ecdf(fib_summary_abundance$CV_abundance),
+      col="blue")
+lines(ecdf(fib_summary_presence$CV_presence),
+      col="red")
+legend('bottomright',
+       legend=c("count","abundance","presence"),  # text in the legend
+       col=c("green","blue","red"),  # point colors
+       pch=15)  # specify the point type to be a square
+
+# Plot CV as a function of mean abundance.
+plot(fib_summary_abundance$CV_abundance~fib_summary_abundance$mean_abundance,
+     xlab="PPG mean abundance",
+     ylab="PPG CV of abundance",
+     main="Mean-CV relationship of PPG relative counts")
+```
+
+
+```{r}
+fib_summary3 <- fib %>% 
+  mutate(PPG = as.factor(paste0(Protein, ";",
+                                Peptide, ";",
+                                Glycans))) %>% 
+  group_by(PPG,
+           # batch,
+           .drop=FALSE) %>% 
+  summarise(n=n(),            
+            mean_auc = mean(XIC.AUC),
+            sd_auc = sd(XIC.AUC),
+            CV_auc = sd_auc / mean_auc)
+
+# one plot
+plot(ecdf(fib_summary3$CV_auc),
+     xlab="CV",
+     ylab="Percentage",
+     main="Empirical Cumulative Distribution: CV of PPGs",
+     xlim=c(0, 3),
+     col="green")
+
+```
+
+# Mean, sd and CV statistics for the absolute XIC.AUC intensity 
+
+The code below will investigate the absolute "intensity" as defined by integrated (summed) AUC scores of the XIC.
+
+```{r}
+fib <- readRDS("data/Fib_total_processed.Rds")
+
+fib_AUC_total <- fib %>% 
+  group_by(batch) %>% 
+  summarise(XIC.AUC_batch.total = sum(XIC.AUC))
+
+fib_PPG_summary <- fib %>% 
+  group_by(PPG,
+           batch,
+           .drop=FALSE) %>%
+  summarise(XIC.AUC_batchPPG.total = sum(XIC.AUC))
+
+fib_summary_AUC <- fib_PPG_summary %>%
+  group_by(PPG) %>% 
+  summarise(mean_AUC = mean(XIC.AUC_batchPPG.total),
+            sd_AUC = sd(XIC.AUC_batchPPG.total),
+            CV_AUC = sd_AUC / mean_AUC)
+
+ggplot(data=fib_PPG_summary,
+       aes(x=XIC.AUC_batchPPG.total,
+           y=PPG)) +
+  geom_boxplot()
+
+# ECDF plot of CV
+plot(ecdf(fib_summary_AUC$CV_AUC),
+          xlab="CV",
+          ylab="Percentage",
+          main="Empirical Cumulative Distribution: CV of glycopeptide total AUCs")
+
+
+plot(log2(fib_summary_AUC$sd_AUC) ~ log2(fib_summary_AUC$mean_AUC),
+     xlab="Log2(mean(total intensity))",
+     ylab="Log2(sd(total intensity))",
+     main="sd. versus mean intensity of the 28 glycopeptides in 6 Fibs")
+
+# write_csv(fib_summary_AUC,
+#           "Fib_summary_AUC.csv")
+
+```
+
+# Mean, sd and CV statistics for the relative XIC.AUC intensity
+
+Our final analysis focuses on the relative integrated N-glycopeptide intensity as defined by the sum of the Area Under the Curve of the XIC.
+
+```{r}
+fib <- readRDS("data/Fib_total_processed.Rds")
+
+# Total AUC per replicate:
+# Take the data (validated ions),
+fib_AUC_total <- fib %>% 
+  # Group by batch (=replicate)
+  group_by(batch) %>% 
+  # return as summary measure the total AUC of all ions. 
+  summarise(XIC.AUC_batch.total = sum(XIC.AUC))
+
+# Summary statistics per PPG
+# Take the data,
+fib_PPG_summary <- fib %>% 
+  # group by PPG and batch combination (also return the ones with 0 observations),
+  group_by(PPG,
+           batch,
+           .drop=FALSE) %>%
+  # Calculate the total AUC per combination. 
+  summarise(XIC.AUC_batchPPG.total = sum(XIC.AUC)) %>% 
+  # Then merge with the table of total AUC per replicate,
+  left_join(fib_AUC_total,
+             by="batch") %>% 
+  # and calculate the PPG AUC relative to the total AUC per replicate. 
+  mutate(XIC.AUC_batchPPG.relative = XIC.AUC_batchPPG.total / XIC.AUC_batch.total)
+
+# Create a 'wide' style table of our findings. 
+fib_summary_AUC <- left_join(fib_PPG_summary %>% 
+                               dplyr::select(PPG, batch, XIC.AUC_batchPPG.relative) %>% 
+                               spread(batch, 
+                                      XIC.AUC_batchPPG.relative),
+                             fib_PPG_summary %>% 
+                               group_by(PPG) %>% 
+                               summarise(mean_AUC.relative = mean(XIC.AUC_batchPPG.relative),
+                                         sd_AUC.relative = sd(XIC.AUC_batchPPG.relative),
+                                         CV_AUC.relative = sd_AUC.relative / mean_AUC.relative),
+                             "PPG")
+
+# create a 'long' style table of our findings. 
+fib_summary_AUC_long <-  
+  fib_summary_AUC %>% 
+  gather(batch, AUC.relative,
+         "1":"4")
+
+# Boxplot for relative intensities
+ggplot(data=fib_summary_AUC_long,
+       aes(x=AUC.relative,
+           y=PPG)) +
+  xlab("Relative intensity") +
+  ylab("Protein-Glycopeptide") + 
+  ggtitle("Relative intensity of glycopeptides") + 
+  geom_boxplot()
+
+# Point-plot for CVs of relative intensities
+ggplot(data=fib_summary_AUC_long,
+       aes(x=CV_AUC.relative,
+           y=PPG)) +
+  xlab("CV of relative intensity") + 
+  ylab("Protein-Glycopeptide") + 
+  ggtitle("CV of glycopeptide relative intensity") + 
+  geom_point(size=3)
+
+# Boxplot and Point-plot overlaid together.
+# I also made this plot in Tableau: it looks better that way. 
+# Still, here is the ggplot2 code:
+# FYI: how ggplot works is that it will plot the values of the intensities and CV values at the same time,
+#  so we must scale the two variables to the desired (same) scale, and then adjust the axes to hide the fact that we did this. 
+coeff <- max(fib_summary_AUC_long$CV_AUC.relative) 
+# intensitycolour <- "#69b3a2"
+intensitycolour <- "black"
+CVcolour <- rgb(0.2, 0.6, 0.9, 1)
+ggplot(data=fib_summary_AUC_long,
+       aes(y=PPG)) + 
+  geom_boxplot(aes(x=AUC.relative), color=intensitycolour) +
+  geom_point(aes(x=CV_AUC.relative / coeff), size=3, color=CVcolour) +
+  scale_x_continuous(
+    # Feature of the first axis
+    name="Relative intensity",
+    # Add a second axis and specify its features
+    sec.axis = sec_axis(~.*coeff,
+                        name="CV of relative intensity")) +
+  theme(axis.title.x = element_text(color = intensitycolour, size=13),
+        axis.title.x.top = element_text(color = CVcolour, size=13)) +
+  ggtitle("(CV of) glycopeptide relative intensities")
+
+# ECDF plot of CV
+plot(ecdf(fib_summary_AUC$CV_AUC.relative),
+          xlab="CV",
+          ylab="Percentage",
+          main="Empirical Cumulative Distribution: CV of glycopeptide relative intensity")
+
+# log2(sd) as a function of log2(mean AUC)
+plot(log2(fib_summary_AUC$sd_AUC.relative) ~ log2(fib_summary_AUC$mean_AUC.relative),
+     xlab="Log2(mean(relative intensity))",
+     ylab="Log2(sd(relative intensity))",
+     main="sd. versus mean intensity of the 28 glycopeptides in 6 Fibs")
+
+# Export the long format lists to an Excel file with multiple sheets.
+# This is the file we import into Tableau. 
+write_xlsx(list("Fib_summary_AUC_wide" = fib_summary_AUC,
+                "Fib_summary_AUC_long" = fib_summary_AUC_long),
+           "data/summaries/Fib_summary_AUC.xlsx")
+```

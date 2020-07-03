@@ -1,3 +1,6 @@
+# Private files
+/old files/
+
 # History files
 .Rhistory
 .Rapp.history
