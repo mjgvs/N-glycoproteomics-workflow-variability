@@ -19,22 +19,22 @@ The following `R` packages were used:
 
 The files are:
 
-- Data files:
+Data files:
 
-`/data/Fib_1.csv`-`Fib_4.csv`: The raw data.
-`/data/Fib_total_processed.csv`: Merged and pre-processed raw data. 
-`/data/Fib_total_processed.Rds`: Merged and pre-processed raw data in RDs form. 
-`/data/summaries/Fib_summary_AUC.xlsx`: Summary measures of N-glycopeptide intensities per replicate and mean, sd and CV of these.
-`/data/summaries/Fib_summary_count.xlsx`: Summary measures of N-glycopeptide counts, relative counts and presence indicators per replicate and mean, sd and CV of these.
+- `/data/Fib_1.csv`-`Fib_4.csv`: The raw data.
+- `/data/Fib_total_processed.csv`: Merged and pre-processed raw data. 
+- `/data/Fib_total_processed.Rds`: Merged and pre-processed raw data in RDs form. 
+- `/data/summaries/Fib_summary_AUC.xlsx`: Summary measures of N-glycopeptide intensities per replicate and mean, sd and CV of these.
+- `/data/summaries/Fib_summary_count.xlsx`: Summary measures of N-glycopeptide counts, relative counts and presence indicators per replicate and mean, sd and CV of these.
 
-- Figures:
-`/Figures/`
+Figures:
+- `/Figures/`
 
-- Scripts
-`/scripts/R/N-glycopeptide Statistical Analysis.Rmd`: All `R` scripts. 
-`/scripts/Tableau/Fib_4_samples.twbx`: Tableau Packaged Workbook for visualisations. 
+Scripts
+- `/scripts/R/N-glycopeptide Statistical Analysis.Rmd`: All `R` scripts. 
+- `/scripts/Tableau/Fib_4_samples.twbx`: Tableau Packaged Workbook for visualisations. 
 
-- Blog post / report files:
-`index.Rmd` and `index.html`: Files to build the website for the report. 
+Blog post / report files:
+- `index.Rmd` and `index.html`: Files to build the website for the report. 
 
 
