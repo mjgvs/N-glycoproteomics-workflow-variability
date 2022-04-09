@@ -2,7 +2,7 @@
 
 This repository contains files used in the creation of a report on the variability in glycopeptide intensity. The report describes joint work by Frania J. Zuñiga-Bañuelos and Maarten van Schaik, PhD candidates in the EU-funded programme IMforFUTURE (Innovative training in methods for future data).
 
-The report can be read here: [N-glycoproteomics-workflow-variability/](https://mjgvanschaik.github.io/N-glycoproteomics-workflow-variability/).
+The report can be read here: [N-glycoproteomics-workflow-variability/](https://mjgvs.github.io/N-glycoproteomics-workflow-variability/).
 
 For the statistical part in the report, the following software was used:
 
